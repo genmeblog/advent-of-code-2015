@@ -4,19 +4,36 @@
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
-(defn parse-line [s] (sort (map read-string (s/split s #"x"))))
+(def strings (-> (io/resource "day05.txt")
+                 (io/reader)
+                 (line-seq)))
 
-(def dimensions (map parse-line (-> (io/resource "day02.txt")
-                                    (io/reader)
-                                    (line-seq))))
+(defn three-vowels? [s] (>= (count (filter #{\a \e \i \o \u} s)) 3))
+(defn double-letter? [ps] (some (fn [[a b]] (= a b)) ps))
+(defn bad-pairs? [ps] (some #{'(\a \b) '(\c \d) '(\p \q) '(\x \y)} ps))
 
-(defn calc-feets
-  ^long [[^long d1 ^long d2 ^long d3]]
-  (+ (* 3 d1 d2) (* 2 d2 d3) (* 2 d3 d1)))
+(defn nice?
+  [s]
+  (let [ps (partition 2 1 s)]
+    (and (three-vowels? s)
+         (double-letter? ps)
+         (not (bad-pairs? ps)))))
 
-(defn calc-ribbon
-  ^long [[^long d1 ^long d2 ^long d3]]
-  (+ d1 d1 d2 d2 (* d1 d2 d3)))
+(def part-1 (count (filter nice? strings)))
 
-(def part-1 (reduce + (map calc-feets dimensions)))
-(def part-2 (reduce + (map calc-ribbon dimensions)))
+(defn letter-between? [s] (some (fn [[a _ b]] (= a b)) (partition 3 1 s)))
+(defn double-doubles?
+  [s]
+  (->> (partition 2 1 s)
+       (reduce (fn [[[a b] lst] [na nb :as new]]
+                 (if (and (= a na) (= b nb))
+                   [nil lst]
+                   [new (conj lst new)])) [])
+       (second)
+       (frequencies)
+       (vals)
+       (some #(> ^long % 1))))
+
+(defn better-nice? [s] (and (double-doubles? s) (letter-between? s)))
+
+(def part-2 (count (filter better-nice? strings)))

@@ -14,7 +14,7 @@
   [d]
   (->> (reductions + 0 d)
        (map-indexed vector)
-       (drop-while (comp not #{-1} second))
+       (drop-while (complement (comp neg? second)))
        (ffirst)))
 
 (def part-2 (find-step data))
